@@ -46,7 +46,7 @@ async def add_to_db(app, service):
         VALUES (%(ip)s,%(port)s,%(available)s);""", service)
 
 
-async def add_service(request):
+async def add_service(app, request):
     data = await request.post()
     try:
         service = {
@@ -149,11 +149,15 @@ def setup_routes(app):
                        , get_records_by_ip_and_port)
 
 
-if __name__ == '__main__':
+def create_app():
     app = web.Application()
     config = get_config('config.yaml')
     app['config'] = config
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)
     setup_routes(app)
-    web.run_app(app)
+    return app
+
+
+if __name__ == '__main__':
+    web.run_app(create_app())
