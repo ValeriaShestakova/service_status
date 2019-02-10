@@ -40,6 +40,27 @@ async def get_records_by_ip(request):
         return web.json_response(resp)
 
 
+async def add_to_db(app, service):
+    async with app['db'].acquire() as conn:
+        await conn.execute("""INSERT INTO services (ip, port, available) 
+        VALUES (%(ip)s,%(port)s,%(available)s);""", service)
+
+
+async def add_service(request):
+    data = await request.post()
+    try:
+        service = {
+            'ip': data['ip'],
+            'port': data['port'],
+            'available': data['available']
+        }
+    except KeyError:
+        raise web.HTTPBadRequest
+
+    await add_to_db(app, service)
+    return web.json_response(service)
+
+
 async def get_records_by_ip_and_port(request):
     resp = []
     service_ip = request.match_info['ip']
@@ -50,7 +71,7 @@ async def get_records_by_ip_and_port(request):
     try:
         ipaddress.ip_address(service_ip)
     except ValueError:
-        raise web.HTTPBadRequest()
+        raise web.HTTPBadRequest
 
     if int(service_port) > 65535:
         raise web.HTTPBadRequest
@@ -120,6 +141,7 @@ async def cleanup_background_tasks(app):
 
 def setup_routes(app):
     app.router.add_get('/', index)
+    app.router.add_post('/service_status/add_service/', add_service)
     app.router.add_get('/service_status/get_records_by_ip/{ip}'
                        , get_records_by_ip)
     app.router.add_get('/service_status/get_records_by_ip_and_port/{ip}'
