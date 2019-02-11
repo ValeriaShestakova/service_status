@@ -9,7 +9,7 @@ from contextlib import closing
 TIMEOUT = 0.1
 
 
-def get_config(path):
+def get_config(path: str):
     with open(path) as f:
         config = yaml.load(f)
     return config
@@ -40,7 +40,7 @@ async def get_records_by_ip(request):
         return web.json_response(resp)
 
 
-async def add_to_db(app, service):
+async def add_to_db(app, service: dict):
     async with app['db'].acquire() as conn:
         await conn.execute("""INSERT INTO services (ip, port, available) 
         VALUES (%(ip)s,%(port)s,%(available)s);""", service)
@@ -73,7 +73,7 @@ async def get_records_by_ip_and_port(request):
     except ValueError:
         raise web.HTTPBadRequest
 
-    if int(service_port) > 65535:
+    if service_port > 65535 or service_port < 0:
         raise web.HTTPBadRequest
     async with request.app['db'].acquire() as conn:
         services = await conn.execute("""SELECT ip, port, available FROM
@@ -90,14 +90,14 @@ async def get_records_by_ip_and_port(request):
         return web.json_response(resp)
 
 
-async def update_db(app, available, id):
+async def update_db(app, available: bool, id: int):
     async with app['db'].acquire() as conn:
         await conn.execute(
             """UPDATE services SET available=(%s) WHERE id=(%s);""",
             (available, id))
 
 
-async def check_available(ip, port):
+async def check_available(ip: str, port: int) -> bool:
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         sock.settimeout(TIMEOUT)
         if sock.connect_ex((ip, port)) == 0:

@@ -8,7 +8,6 @@ verify_ssl = true
 [packages]
 aiohttp = "*"
 pyyaml = "*"
-sqlalchemy = "*"
 aiopg = {extras = ["sa"],version = "*"}
 
 [requires]
